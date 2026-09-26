@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>For Anthea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Yellowtail&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blush:#FBE4DF; --blush2:#F6D3CB; --crimson:#8E1B34; --crimson-deep:#6E1226;
+    --cream:#FFF8F3; --gold:#D9A441; --rose:#B23A52; --ink:#3A1620;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    box-sizing:border-box;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; overflow:hidden; background:var(--blush);}
+  body{font-family:'Inter',sans-serif; font-weight:300; color:var(--ink); position:relative;}
+  .serif{font-family:'Playfair Display',serif;}
+  .script{font-family:'Yellowtail',cursive;}
+  button{font-family:'Inter',sans-serif; border:none; cursor:pointer; background:none;}
+
+  #ripplebg{position:fixed; inset:-20%; z-index:0; pointer-events:none;
+    background:repeating-radial-gradient(circle at 50% 42%, rgba(142,27,52,0.05) 0px, rgba(142,27,52,0.05) 1.5px, transparent 3px, transparent 46px);}
+  #confetti-canvas{position:fixed; inset:0; z-index:80; pointer-events:none;}
+  #flashlayer{position:fixed; inset:0; z-index:85; background:rgba(255,255,255,0.3); opacity:0; pointer-events:none;}
+
+  .card{position:fixed; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:9vh 7vw; opacity:0; pointer-events:none; transition:opacity .7s ease;}
+  .card.active{opacity:1; pointer-events:auto;}
+  .card.block{background:linear-gradient(160deg, var(--crimson), var(--crimson-deep)); color:var(--cream); z-index:3;}
+  .eyebrow{font-size:0.82rem; font-style:italic; color:var(--rose); margin-bottom:0.8rem;}
+  .card.block .eyebrow{color:#F3C9CC;}
+  h1.display{font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(2.6rem,9vw,5.2rem); line-height:1.05;}
+  h2.display{font-family:'Playfair Display',serif; font-weight:700; font-size:clamp(1.7rem,5vw,2.8rem); line-height:1.2; max-width:720px;}
+  .goldline{width:90px; height:2px; background:var(--gold); border:none; margin:1.1rem auto; border-radius:2px; position:relative;}
+  .goldline::after{content:'✦'; position:absolute; left:50%; top:-9px; transform:translateX(-50%); color:var(--gold); font-size:0.7rem;}
+  p.lead{font-size:clamp(0.95rem,2.1vw,1.15rem); max-width:520px; line-height:1.7; margin-top:1.2rem;}
+  .card.block p.lead{color:#FBE0E2;}
+
+  .next-btn{margin-top:2.4rem; border-radius:100px; padding:0.8rem 2rem; background:var(--crimson); color:var(--cream);
+    font-size:0.9rem; letter-spacing:0.02em; transition:transform .2s ease; box-shadow:0 8px 20px rgba(142,27,52,0.25);}
+  .card.block .next-btn{background:var(--cream); color:var(--crimson);}
+  .next-btn:hover{transform:scale(1.05);}
+
+  /* ---------- passcode ---------- */
+  #keypad{display:grid; grid-template-columns:repeat(3,64px); gap:0.7rem; margin-top:1.6rem;}
+  .key{width:64px; height:64px; border-radius:50%; background:var(--crimson); color:var(--cream); font-size:1.2rem;
+    display:flex; align-items:center; justify-content:center; transition:transform .12s ease;}
+  .key:active{transform:scale(0.9);}
+  #passdots{display:flex; gap:0.8rem; margin-top:1.4rem;}
+  .pdot{width:14px; height:14px; border-radius:50%; border:2px solid var(--crimson);}
+  .pdot.filled{background:var(--crimson);}
+  #passcode.shake{animation:shake .4s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);}}
+  #passnote{margin-top:1rem; font-size:0.8rem; color:var(--rose); min-height:1.1em;}
+
+  /* ---------- heart pull & release ---------- */
+  #pullzone{position:relative; width:260px; height:260px; margin-top:1.6rem; touch-action:none;}
+  #anchor{position:absolute; left:50%; top:14px; width:6px; height:6px; border-radius:50%; background:var(--crimson); transform:translateX(-50%);}
+  #band{position:absolute; left:50%; top:14px; width:2px; background:var(--crimson); opacity:0.5; transform-origin:top center;}
+  #heart{position:absolute; left:50%; top:14px; width:70px; height:64px; transform:translate(-50%,-50%); cursor:grab;}
+  #pullhint{margin-top:1.2rem; font-size:0.8rem; letter-spacing:0.08em; color:var(--rose); text-transform:uppercase;}
+
+  /* ---------- tree bloom ---------- */
+  .petal{position:absolute; font-size:1.1rem; top:-5%; opacity:0.85; animation:fall linear infinite;}
+  @keyframes fall{to{transform:translateY(115vh) rotate(200deg); opacity:0;}}
+  .bloom{width:0; height:0; border-radius:50%; opacity:0; position:absolute; transition:all .5s cubic-bezier(.3,1.6,.4,1);}
+  #treewrap{position:relative; width:280px; height:260px;}
+
+  /* ---------- timeline / memory ---------- */
+  .timeline{display:flex; flex-direction:column; gap:1.4rem; max-width:520px; margin-top:1.6rem; text-align:left;}
+  .timeline .row{display:flex; gap:0.9rem; align-items:flex-start;}
+  .dot{min-width:8px; height:8px; border-radius:50%; background:var(--crimson); margin-top:8px;}
+  .row p{font-size:0.98rem; line-height:1.55;}
+
+  .polaroid{background:var(--cream); padding:14px 14px 46px; box-shadow:0 20px 40px rgba(142,27,52,0.18); transform:rotate(-3deg); width:min(78vw,300px);}
+  .polaroid .frame{width:100%; aspect-ratio:1/1; background:linear-gradient(160deg,#F3C9CC,#EBB0B6); display:flex; align-items:center; justify-content:center; font-size:2.4rem; color:#fff;}
+  .tape{position:absolute; width:70px; height:24px; background:rgba(255,255,255,0.55); top:-10px; left:50%; transform:translateX(-50%) rotate(-2deg);}
+
+  /* ---------- ear-blow ---------- */
+  #laugh-box{border:1.5px solid var(--crimson); border-radius:100px; padding:0.8rem 1.6rem; font-size:0.92rem; color:var(--crimson); transition:transform .3s ease;}
+  #laugh-box.blown{animation:puff .6s ease;}
+  @keyframes puff{40%{transform:scale(1.15) rotate(-3deg);}}
+  #laugh-note{margin-top:1rem; font-size:0.9rem; color:var(--rose); opacity:0; transition:opacity .5s ease;}
+  #laugh-note.show{opacity:1;}
+
+  /* ---------- flip cards ---------- */
+  .cardgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:0.9rem; max-width:420px; margin-top:1.4rem; width:100%; perspective:1000px; max-height:56vh; overflow-y:auto;}
+  .flipcard{height:150px;}
+  .flipinner{position:relative; width:100%; height:100%; transition:transform .7s cubic-bezier(.4,.2,.2,1); transform-style:preserve-3d;}
+  .flipcard.flipped .flipinner{transform:rotateY(180deg);}
+  .face{position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0.8rem; font-size:0.82rem;}
+  .front{background:linear-gradient(160deg,var(--crimson),var(--crimson-deep)); color:var(--cream); font-weight:600;}
+  .back{background:var(--cream); border:1px solid var(--blush2); transform:rotateY(180deg); line-height:1.4;}
+  .chibi{width:38px; height:38px; margin-bottom:0.3rem;}
+
+  /* ---------- balloons ---------- */
+  #balloonfield{position:relative; width:100%; max-width:340px; height:280px; margin-top:0.6rem;}
+  .balloon{position:absolute; width:56px; height:70px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; cursor:pointer;}
+  .balloon:hover{transform:scale(1.06);}
+  @keyframes floaty{0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);}}
+  #balloon-msg{margin-top:1rem; font-size:0.95rem; color:var(--rose); opacity:0; transition:opacity .6s ease;}
+  #balloon-msg.show{opacity:1;}
+
+  /* ---------- cake ---------- */
+  .cake{width:150px;}
+  .flame{transform-origin:bottom center; animation:flick .8s ease-in-out infinite alternate;}
+  @keyframes flick{0%{transform:scaleY(1) rotate(-2deg);} 100%{transform:scaleY(1.15) rotate(2deg);}}
+  .flame.out{animation:none; opacity:0; transition:opacity .4s ease;}
+  #blowbtn2{margin-top:1.4rem; border-radius:100px; padding:0.8rem 1.6rem; background:var(--crimson); color:var(--cream); font-size:0.9rem; font-weight:600;}
+  #wish-msg{margin-top:1.1rem; opacity:0; transition:opacity .6s ease; color:var(--rose);}
+  #wish-msg.show{opacity:1;}
+
+  /* ---------- accept ---------- */
+  #accept-area{position:relative; width:100%; max-width:400px; height:130px; margin-top:1.4rem;}
+  .accept-btn{position:absolute; top:44px; padding:0.8rem 1.6rem; border-radius:100px; font-size:0.92rem; font-weight:600;}
+  #yesbtn2{left:calc(50% - 118px); background:var(--gold); color:var(--ink);}
+  #nobtn2{left:calc(50% + 10px); border:1.5px solid var(--crimson); color:var(--crimson); transition:left .25s ease, top .25s ease;}
+  #nudge{margin-top:0.7rem; font-size:0.82rem; color:var(--rose); min-height:1.1em;}
+
+  /* ---------- gift boxes ---------- */
+  .giftrow{display:flex; gap:1.2rem; flex-wrap:wrap; justify-content:center; margin-top:1.6rem;}
+  .giftbox{width:100px; cursor:pointer;}
+  .giftbox .box{font-size:2.6rem; transition:transform .3s ease;}
+  .giftbox:hover .box{transform:translateY(-6px) rotate(-4deg);}
+  .giftbox .label{font-size:0.72rem; margin-top:0.4rem; color:var(--rose);}
+  .giftreveal{margin-top:1.4rem; max-width:460px; min-height:1.6rem; font-size:0.98rem; color:var(--rose); opacity:0; transition:opacity .5s ease;}
+  .giftreveal.show{opacity:1;}
+
+  .signature{margin-top:1.6rem; font-family:'Yellowtail',cursive; font-size:1.8rem; color:var(--gold);}
+
+  @media (max-width:600px){
+    #keypad{grid-template-columns:repeat(3,58px);}
+    .key{width:58px;height:58px;}
+    #accept-area{display:flex; flex-direction:column; align-items:center; height:auto; gap:0.8rem;}
+    .accept-btn{position:static;}
+    #nobtn2{transition:transform .15s ease;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .card{transition:none;} .petal,.flame{animation:none;}
+  }
+</style>
+</head>
+<body class="locked">
+<div id="ripplebg"></div>
+<canvas id="confetti-canvas"></canvas>
+<div id="flashlayer"></div>
+
+<div id="lockscreen" class="card active" style="background:var(--blush); z-index:90;">
+  <div class="eyebrow">something is waiting for you</div>
+  <h2 class="display">Come back on <span style="color:var(--crimson);">10 October 2026</span>, Anthea.</h2>
+  <div id="countdown" style="display:flex; gap:1.2rem; margin-top:1.8rem;">
+    <div><div class="serif" id="cd-d" style="font-size:2rem; color:var(--crimson);">--</div><div style="font-size:0.65rem; color:var(--rose);">DAYS</div></div>
+    <div><div class="serif" id="cd-h" style="font-size:2rem; color:var(--crimson);">--</div><div style="font-size:0.65rem; color:var(--rose);">HRS</div></div>
+    <div><div class="serif" id="cd-m" style="font-size:2rem; color:var(--crimson);">--</div><div style="font-size:0.65rem; color:var(--rose);">MIN</div></div>
+    <div><div class="serif" id="cd-s" style="font-size:2rem; color:var(--crimson);">--</div><div style="font-size:0.65rem; color:var(--rose);">SEC</div></div>
+  </div>
+  <p class="lead">This one's timed on purpose. Whatever's waiting behind this, it's worth the wait.</p>
+</div>
+
+<div id="deck">
+
+  <div class="card" data-i="0">
+    <div class="eyebrow">enter the passcode</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.8rem);">Only she gets in.</h2>
+    <div id="passdots"></div>
+    <div id="keypad"></div>
+    <div id="passnote">hint: the day I became the luckiest man alive (DDMM)</div>
+  </div>
+
+  <div class="card" data-i="1">
+    <div class="eyebrow">a little something, for you</div>
+    <div id="pullzone">
+      <div id="band"></div>
+      <div id="anchor"></div>
+      <svg id="heart" viewBox="0 0 32 29"><path d="M16 29 C16 29 0 18 0 8.5 C0 3 4 0 8.5 0 C12 0 15 2 16 5 C17 2 20 0 23.5 0 C28 0 32 3 32 8.5 C32 18 16 29 16 29 Z" fill="#8E1B34"/></svg>
+    </div>
+    <div id="pullhint">pull & release</div>
+  </div>
+
+  <div class="card block" data-i="2">
+    <div class="eyebrow">make a wish...</div>
+    <h1 class="display">Happy<br>Birthday</h1>
+    <hr class="goldline">
+    <p class="lead">to the gem of my life</p>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="3">
+    <div class="eyebrow">05 · 07 · 2026</div>
+    <div id="treewrap">
+      <svg viewBox="0 0 200 180" style="position:absolute; inset:0;">
+        <path d="M100 180 L100 110 M100 110 L70 70 M100 110 L130 70 M70 70 L50 40 M70 70 L75 35 M130 70 L150 40 M130 70 L125 35 M100 110 L100 60"
+          stroke="#6E1226" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div id="bloomlayer" style="position:absolute; inset:0;"></div>
+    </div>
+    <h2 class="script" style="font-size:2.4rem; color:var(--crimson); margin-top:0.4rem;">Happy Birthday</h2>
+    <p class="lead">here's to a year that blooms</p>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="4">
+    <div class="eyebrow">a quiet truth, first</div>
+    <h2 class="display">You never once made me feel small for not having the answers yet.</h2>
+    <p class="lead">Two years of searching, doubting, starting over — and you stayed steady the whole time, like it was never a question.</p>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="5">
+    <div class="eyebrow">what you actually did</div>
+    <h2 class="display" style="font-size:clamp(1.4rem,4.5vw,2rem);">Not grand gestures. Just everything, quietly.</h2>
+    <div class="timeline">
+      <div class="row"><div class="dot"></div><p>When I needed money, you gave without a second thought — yours becoming mine.</p></div>
+      <div class="row"><div class="dot"></div><p>On the days the job hunt broke me, you sat with me in it. Not fixing, just staying.</p></div>
+      <div class="row"><div class="dot"></div><p>You defended me — to your own family, to friends — even when it cost you something.</p></div>
+      <div class="row"><div class="dot"></div><p>You never once made me ask. You just noticed, and gave, before I found the words.</p></div>
+    </div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="6" style="position:relative;">
+    <div class="eyebrow">who is this endlessly patient with me?</div>
+    <div class="polaroid" style="position:relative;">
+      <div class="tape"></div>
+      <div class="frame">🤍</div>
+      <p style="font-family:'Yellowtail',cursive; font-size:1.3rem; color:var(--crimson); margin-top:10px;">Anthea, always</p>
+    </div>
+    <p class="lead" style="margin-top:1rem; font-size:0.8rem; color:var(--rose);">(drop a real photo of us here — swap the 🤍 for an &lt;img&gt;)</p>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="7">
+    <div class="eyebrow">okay, one silly one</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.9rem);">You know that thing you do — blow air in my ear, dead certain it "triggers" something in me?</h2>
+    <p class="lead">Go ahead. Try it here too.</p>
+    <button id="laugh-box">👂 blow here</button>
+    <div id="laugh-note">— it never triggered anything. I just love you too much to tell you to stop. 😄</div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="8">
+    <div class="eyebrow">tap each one</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.7rem);">Funny love, delivered as cards.</h2>
+    <div class="cardgrid" id="cardgrid"></div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="9">
+    <div class="eyebrow">go on, pop them</div>
+    <h2 class="script" style="font-size:2rem; color:var(--crimson);">Pop all 6 balloons</h2>
+    <div id="balloonfield"></div>
+    <div id="balloon-msg">Every balloon was a year I get to spend loving you. 🎈</div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="10">
+    <div class="eyebrow">make a wish</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.7rem);">Not your birthday cake. Just a small one, for the wife-versary.</h2>
+    <svg class="cake" viewBox="0 0 200 200">
+      <rect x="40" y="120" width="120" height="60" rx="10" fill="#EBB0B6"/>
+      <rect x="40" y="100" width="120" height="24" rx="8" fill="#8E1B34"/>
+      <rect x="95" y="60" width="10" height="42" fill="#FFF8F3"/>
+      <path class="flame" d="M100 20 C 92 35, 92 50, 100 58 C 108 50, 108 35, 100 20 Z" fill="#D9A441"/>
+    </svg>
+    <button id="blowbtn2">🕯️ blow the candle</button>
+    <div id="wish-msg">Make a wish... it already came true. It's you. ✨</div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="11">
+    <div class="eyebrow">formal request</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.9rem);">Will you accept this small gift from your husband?</h2>
+    <div id="accept-area">
+      <button class="accept-btn" id="yesbtn2">Yes, obviously 💛</button>
+      <button class="accept-btn" id="nobtn2">No</button>
+    </div>
+    <div id="nudge"></div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card" data-i="12">
+    <div class="eyebrow">choose one</div>
+    <h2 class="display" style="font-size:clamp(1.3rem,4vw,1.7rem);">Pick a gift box. Each one is real.</h2>
+    <div class="giftrow" id="giftrow"></div>
+    <div class="giftreveal" id="giftreveal"></div>
+    <button class="next-btn" onclick="goNext()">continue</button>
+  </div>
+
+  <div class="card block" data-i="13">
+    <div class="eyebrow">happy birthday, wife</div>
+    <h1 class="display" style="font-size:clamp(2rem,7vw,3.6rem);">Gem of my life,<br>thank you for<br>choosing me.</h1>
+    <p class="lead">This is the first birthday I get to call you my wife. It will not be the last time I try to deserve you.</p>
+    <div class="signature">always yours, Anthony</div>
+  </div>
+
+</div>
+
+<script>
+/* ================= Deck navigation ================= */
+const cards = [...document.querySelectorAll('#deck .card')];
+let cur = 0;
+function showCard(i){
+  cards.forEach(c=>c.classList.remove('active'));
+  cards[i].classList.add('active');
+  cur = i;
+  onCardEnter(i);
+}
+function goNext(){ if(cur < cards.length-1) showCard(cur+1); }
+
+/* ================= Sound design ================= */
+let actx;
+function ensureAudio(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }
+function playPop(){
+  ensureAudio();
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(650,actx.currentTime); o.frequency.exponentialRampToValueAtTime(110,actx.currentTime+0.16);
+  g.gain.setValueAtTime(0.28,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.2);
+  o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.22);
+}
+function playChime(){
+  ensureAudio();
+  [523.25,659.25,783.99].forEach((f,i)=>{
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    const t0=actx.currentTime+i*0.09;
+    g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.22,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.55);
+    o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0+0.6);
+  });
+}
+function playWhoosh(){
+  ensureAudio();
+  const bufferSize=Math.floor(actx.sampleRate*0.4);
+  const buffer=actx.createBuffer(1,bufferSize,actx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){ data[i]=(Math.random()*2-1)*(1-i/bufferSize); }
+  const noise=actx.createBufferSource(); noise.buffer=buffer;
+  const filter=actx.createBiquadFilter(); filter.type='lowpass';
+  filter.frequency.setValueAtTime(900,actx.currentTime); filter.frequency.exponentialRampToValueAtTime(90,actx.currentTime+0.4);
+  const g=actx.createGain(); g.gain.setValueAtTime(0.35,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.4);
+  noise.connect(filter); filter.connect(g); g.connect(actx.destination); noise.start();
+}
+
+/* ================= Confetti + shockwave ================= */
+const confettiCanvas = document.getElementById('confetti-canvas');
+const cctx = confettiCanvas.getContext('2d');
+function fitConfetti(){ confettiCanvas.width=innerWidth; confettiCanvas.height=innerHeight; }
+fitConfetti(); window.addEventListener('resize', fitConfetti);
+let confettiParticles = [], ringParticles = [];
+const confettiColors = ['#8E1B34','#D9A441','#EBB0B6','#B23A52','#FFF8F3'];
+function burstConfetti(x,y,count){
+  count = count || 90;
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2, speed=3+Math.random()*7;
+    confettiParticles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-3,size:4+Math.random()*5,
+      color:confettiColors[Math.floor(Math.random()*confettiColors.length)],rot:Math.random()*Math.PI,vrot:(Math.random()-0.5)*0.3,
+      shape:['rect','circle','star'][Math.floor(Math.random()*3)],life:0});
+  }
+}
+function drawStar(ctx,r){
+  ctx.beginPath();
+  for(let i=0;i<5;i++){
+    const a=(i*2*Math.PI/5)-Math.PI/2, x=Math.cos(a)*r, y=Math.sin(a)*r;
+    ctx.lineTo(x,y);
+    const a2=a+Math.PI/5;
+    ctx.lineTo(Math.cos(a2)*r*0.45, Math.sin(a2)*r*0.45);
+  }
+  ctx.closePath();
+}
+function shockwave(x,y,color){ ringParticles.push({x,y,r:6,alpha:0.9,color:color||'#8E1B34'}); }
+function confettiLoop(){
+  requestAnimationFrame(confettiLoop);
+  cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  ringParticles.forEach(r=>{
+    r.r+=15; r.alpha-=0.045;
+    cctx.save(); cctx.globalAlpha=Math.max(0,r.alpha); cctx.strokeStyle=r.color; cctx.lineWidth=4;
+    cctx.beginPath(); cctx.arc(r.x,r.y,r.r,0,Math.PI*2); cctx.stroke(); cctx.restore();
+  });
+  ringParticles = ringParticles.filter(r=>r.alpha>0);
+  confettiParticles.forEach(p=>{
+    p.vy+=0.12; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vrot; p.life++;
+    cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot);
+    cctx.fillStyle=p.color; cctx.globalAlpha=Math.max(0,1-p.life/110);
+    if(p.shape==='circle'){ cctx.beginPath(); cctx.arc(0,0,p.size/2,0,Math.PI*2); cctx.fill(); }
+    else if(p.shape==='star'){ drawStar(cctx,p.size*0.7); cctx.fill(); }
+    else { cctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6); }
+    cctx.restore();
+  });
+  confettiParticles = confettiParticles.filter(p=>p.life<110);
+}
+confettiLoop();
+function burstAtElement(el,count){ const r=el.getBoundingClientRect(); burstConfetti(r.left+r.width/2, r.top+r.height/2, count); }
+const flashlayer = document.getElementById('flashlayer');
+function flash(color){
+  flashlayer.style.transition='none'; flashlayer.style.background=color; flashlayer.style.opacity='1';
+  requestAnimationFrame(()=>{ flashlayer.style.transition='opacity .45s ease'; flashlayer.style.opacity='0'; });
+}
+
+/* ================= Countdown lock ================= */
+const UNLOCK_AT = new Date(2026, 9, 10, 0, 0, 0).getTime();
+const lockscreen = document.getElementById('lockscreen');
+const cdEls = {d:document.getElementById('cd-d'),h:document.getElementById('cd-h'),m:document.getElementById('cd-m'),s:document.getElementById('cd-s')};
+let unlocked = false;
+function unlockSite(){
+  if(unlocked) return; unlocked = true;
+  document.body.classList.remove('locked');
+  lockscreen.style.transition='opacity 1s ease'; lockscreen.style.opacity='0';
+  setTimeout(()=>{ lockscreen.style.display='none'; }, 1050);
+  burstConfetti(innerWidth/2, innerHeight*0.35, 110);
+  showCard(0);
+}
+function tickCountdown(){
+  const diff = UNLOCK_AT - Date.now();
+  if(diff<=0){ unlockSite(); return; }
+  const s=Math.floor(diff/1000);
+  cdEls.d.textContent=Math.floor(s/86400);
+  cdEls.h.textContent=String(Math.floor((s%86400)/3600)).padStart(2,'0');
+  cdEls.m.textContent=String(Math.floor((s%3600)/60)).padStart(2,'0');
+  cdEls.s.textContent=String(s%60).padStart(2,'0');
+}
+tickCountdown(); setInterval(tickCountdown,1000);
+if(location.hash.includes('preview')) unlockSite();
+
+/* ================= Card 0: passcode ================= */
+const PASSCODE = "1010"; // change this to whatever date you want — DDMM
+let entered = "";
+const passdots = document.getElementById('passdots');
+const keypad = document.getElementById('keypad');
+const passnote = document.getElementById('passnote');
+for(let n=0;n<4;n++){ const d=document.createElement('div'); d.className='pdot'; passdots.appendChild(d); }
+[1,2,3,4,5,6,7,8,9,'',0,'⌫'].forEach(k=>{
+  const b=document.createElement('button'); b.className='key'; b.textContent=k;
+  if(k==='') b.style.visibility='hidden';
+  b.addEventListener('click', ()=>{
+    if(k==='⌫'){ entered = entered.slice(0,-1); }
+    else if(entered.length<4){ entered += k; playPop(); }
+    renderDots();
+    if(entered.length===4){
+      setTimeout(()=>{
+        if(entered===PASSCODE){ playChime(); burstAtElement(passdots,60); goNext(); }
+        else {
+          document.querySelector('.card[data-i="0"]').classList.add('shake');
+          passnote.textContent = "not quite — try again";
+          setTimeout(()=>{ document.querySelector('.card[data-i="0"]').classList.remove('shake'); entered=''; renderDots(); },400);
+        }
+      },150);
+    }
+  });
+  keypad.appendChild(b);
+});
+function renderDots(){ [...passdots.children].forEach((d,i)=>d.classList.toggle('filled', i<entered.length)); }
+
+/* ================= Card 1: pull & release heart ================= */
+const pullzone=document.getElementById('pullzone'), heart=document.getElementById('heart'),
+      band=document.getElementById('band'), anchorEl=document.getElementById('anchor');
+let dragging=false, hx=0, hy=0;
+function setHeart(x,y){
+  heart.style.left=(130+x)+'px'; heart.style.top=(14+y)+'px';
+  const dist=Math.hypot(x,y);
+  band.style.height=dist+'px';
+  const ang=Math.atan2(y,x)*180/Math.PI - 90;
+  band.style.transform=`rotate(${ang}deg)`;
+}
+function pointerMove(e){
+  if(!dragging) return;
+  const r=pullzone.getBoundingClientRect();
+  const px=(e.touches?e.touches[0].clientX:e.clientX)-r.left-130;
+  const py=(e.touches?e.touches[0].clientY:e.clientY)-r.top-14;
+  const dist=Math.min(Math.hypot(px,py),110);
+  const ang=Math.atan2(py,px);
+  hx=Math.cos(ang)*dist; hy=Math.sin(ang)*dist;
+  setHeart(hx,hy);
+}
+function pointerUp(){
+  if(!dragging) return; dragging=false;
+  const dist=Math.hypot(hx,hy);
+  if(dist>55){
+    heart.style.transition='transform .5s ease, opacity .5s ease';
+    heart.style.transform=`translate(${hx*4}px, ${hy*4}px) scale(0.3)`;
+    heart.style.opacity='0';
+    playWhoosh(); flash('rgba(142,27,52,0.35)');
+    setTimeout(goNext, 500);
+  } else {
+    heart.style.transition='left .4s cubic-bezier(.4,1.8,.4,1), top .4s cubic-bezier(.4,1.8,.4,1)';
+    band.style.transition='height .4s ease';
+    setHeart(0,0);
+    setTimeout(()=>{ heart.style.transition=''; band.style.transition=''; },400);
+  }
+}
+heart.addEventListener('pointerdown', e=>{ dragging=true; heart.style.cursor='grabbing'; });
+window.addEventListener('pointermove', pointerMove);
+window.addEventListener('pointerup', pointerUp);
+
+/* ================= Card 3: tree bloom ================= */
+function bloomTree(){
+  const layer = document.getElementById('bloomlayer');
+  if(layer.children.length) return;
+  const tips = [[70,70],[130,70],[50,40],[75,35],[150,40],[125,35],[100,60],[100,45]];
+  for(let i=0;i<46;i++){
+    const b=document.createElement('div'); b.className='bloom';
+    const base=tips[i%tips.length];
+    const ox=base[0]+(Math.random()-0.5)*55, oy=base[1]+(Math.random()-0.5)*45-10;
+    b.style.left=ox+'px'; b.style.top=oy+'px';
+    b.style.background = Math.random()<0.5 ? '#EBB0B6' : '#D9A441';
+    layer.appendChild(b);
+    setTimeout(()=>{ b.style.width='16px'; b.style.height='16px'; b.style.opacity='0.9'; b.style.transform='translate(-8px,-8px)'; }, 60*i);
+  }
+  for(let i=0;i<10;i++){
+    const p=document.createElement('div'); p.className='petal'; p.textContent='🌸';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(4+Math.random()*3)+'s';
+    p.style.animationDelay=(Math.random()*4)+'s';
+    document.getElementById('treewrap').appendChild(p);
+  }
+}
+
+/* ================= Card 6: love flip-cards ================= */
+function chibiSVG(mood){
+  const mouths = {happy:'M14 24 Q19 28 25 24', shy:'M15 25 Q19 23 24 25'};
+  return `<svg class="chibi" viewBox="0 0 38 38"><circle cx="19" cy="19" r="16" fill="#FFF8F3"/>
+    <circle cx="13" cy="16" r="2.3" fill="#3A1620"/><circle cx="25" cy="16" r="2.3" fill="#3A1620"/>
+    <path d="${mouths[mood]||mouths.happy}" stroke="#3A1620" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+}
+const loveCards = [
+  {front:'I love you this much 🤲', back: chibiSVG('happy')+'<div>Arms as wide as they go — and my WiFi bill still doesn\'t stretch that far.</div>'},
+  {front:'⚠️ Warning: contagious', back: chibiSVG('happy')+'<div>Symptoms: grinning at my phone, missing you within 5 minutes.</div>'},
+  {front:'🏅 Ear-Blow Survivor', back: chibiSVG('shy')+'<div>Two years strong. Still not triggered. Still not telling you to stop.</div>'},
+  {front:'100% real, maybe 2% cheesy', back: chibiSVG('happy')+'<div>I would choose those two hard years again, every time, with you on the other side of it.</div>'},
+];
+const cardgrid = document.getElementById('cardgrid');
+loveCards.forEach(c=>{
+  const el=document.createElement('div'); el.className='flipcard';
+  el.innerHTML = `<div class="flipinner"><div class="face front">${c.front}</div><div class="face back">${c.back}</div></div>`;
+  el.addEventListener('click', ()=>{ el.classList.toggle('flipped'); if(el.classList.contains('flipped')){ playPop(); burstAtElement(el,16);} });
+  cardgrid.appendChild(el);
+});
+
+/* ================= Card 9: balloons ================= */
+const balloonColors = ['#8E1B34','#D9A441','#EBB0B6','#B23A52'];
+const balloonField = document.getElementById('balloonfield');
+const balloonMsg = document.getElementById('balloon-msg');
+let poppedCount=0; const totalBalloons=6;
+for(let i=0;i<totalBalloons;i++){
+  const b=document.createElement('div'); b.className='balloon';
+  const left = 8+(i*(84/totalBalloons))+(Math.random()*4), top = 10+Math.random()*90;
+  b.style.left=left+'%'; b.style.top=top+'px';
+  b.style.background = `radial-gradient(circle at 30% 28%, #fff8, transparent), ${balloonColors[i%balloonColors.length]}`;
+  b.style.animation = `floaty ${3+Math.random()*1.5}s ease-in-out ${Math.random()*2}s infinite`;
+  b.addEventListener('click', ()=>{
+    if(b.dataset.popped) return; b.dataset.popped='1';
+    const rect=b.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    b.style.transition='transform .25s ease, opacity .25s ease'; b.style.transform='scale(1.6)'; b.style.opacity='0';
+    burstConfetti(cx,cy,60); shockwave(cx,cy,balloonColors[i%balloonColors.length]); flash('rgba(255,255,255,0.25)'); playPop();
+    poppedCount++;
+    if(poppedCount>=totalBalloons){ balloonMsg.classList.add('show'); playChime(); burstConfetti(innerWidth/2, innerHeight/2, 120); }
+  });
+  balloonField.appendChild(b);
+}
+
+/* ================= Card 10: candle ================= */
+const blowbtn2=document.getElementById('blowbtn2'), flame=document.querySelector('.flame'), wishMsg=document.getElementById('wish-msg');
+let blownOut=false;
+blowbtn2.addEventListener('click', ()=>{
+  if(blownOut) return; blownOut=true;
+  flame.classList.add('out'); wishMsg.classList.add('show');
+  burstAtElement(blowbtn2,55); playWhoosh();
+  blowbtn2.textContent='🕯️ wish made';
+});
+
+/* ================= Card 11: accept gift ================= */
+const acceptArea=document.getElementById('accept-area'), yesbtn2=document.getElementById('yesbtn2'),
+      nobtn2=document.getElementById('nobtn2'), nudge=document.getElementById('nudge');
+const nudges=["nope, try again","not so fast","this button has commitment issues","it's shy"];
+function dodge(){
+  if(innerWidth<601) return;
+  const w=acceptArea.clientWidth, h=acceptArea.clientHeight;
+  nobtn2.style.left=(Math.random()*Math.max(10,w-130))+'px';
+  nobtn2.style.top=(Math.random()*Math.max(10,h-50))+'px';
+  nudge.textContent = nudges[Math.floor(Math.random()*nudges.length)];
+}
+nobtn2.addEventListener('mouseenter', dodge);
+nobtn2.addEventListener('click', e=>{ e.preventDefault(); dodge(); });
+yesbtn2.addEventListener('click', ()=>{
+  burstAtElement(yesbtn2,90); flash('rgba(217,164,65,0.3)'); playChime();
+  nudge.textContent="knew it. 💛"; yesbtn2.textContent="accepted, forever 💛";
+});
+
+/* ================= Card 12: gift boxes ================= */
+const gifts = [
+  {icon:'🎁', label:'a smile', msg:'You are, without competition, the best thing that has happened to my twenties.'},
+  {icon:'💌', label:'a memory', msg:'The day you gave without me asking taught me what love looks like when no one is watching.'},
+  {icon:'🔒', label:'my promise', msg:'I will spend every birthday after this one trying to be someone worth all of this.'},
+];
+const giftrow=document.getElementById('giftrow'), giftreveal=document.getElementById('giftreveal');
+gifts.forEach(g=>{
+  const el=document.createElement('div'); el.className='giftbox';
+  el.innerHTML = `<div class="box">${g.icon}</div><div class="label">${g.label}</div>`;
+  el.addEventListener('click', ()=>{ giftreveal.textContent=g.msg; giftreveal.classList.add('show'); burstAtElement(el,30); playPop(); });
+  giftrow.appendChild(el);
+});
+
+/* ================= Card-enter hooks ================= */
+function onCardEnter(i){
+  if(i===3) setTimeout(bloomTree, 300);
+  if(i===13){ burstConfetti(innerWidth/2, innerHeight*0.3, 150); flash('rgba(142,27,52,0.2)'); playChime(); }
+}
+
+/* ================= Ear-blow ================= */
+const laughBox=document.getElementById('laugh-box'), laughNote=document.getElementById('laugh-note');
+let blown=false;
+laughBox.addEventListener('click', ()=>{
+  laughBox.classList.remove('blown'); void laughBox.offsetWidth; laughBox.classList.add('blown');
+  if(!blown){ laughNote.classList.add('show'); blown=true; playPop(); burstAtElement(laughBox,24); }
+});
+</script>
+</body>
+</html>
