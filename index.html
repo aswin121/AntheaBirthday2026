@@ -206,22 +206,62 @@
   @keyframes spin{to{--ang:360deg;}}
   .nomotion .next-btn,.nomotion .key{transition:transform .2s;}
   @media(prefers-reduced-motion:reduce){.next-btn::before{animation:none;}}
+
+  /* countdown travel lounge */
+  #lockscreen{gap:.15rem;background:radial-gradient(ellipse at 50% 20%,#fffaf6 0,var(--blush) 68%);}
+  #lockscreen .eyebrow{margin-bottom:.45rem;letter-spacing:.12em;text-transform:uppercase;}
+  #lockscreen h2{max-width:660px;}
+  .departure-tag{display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;padding:.4rem .8rem;border:1px solid rgba(142,27,52,.14);border-radius:999px;background:rgba(255,248,243,.8);color:var(--rose);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;}
+  .departure-tag span{color:var(--gold);}
+  .flight-path{position:relative;width:min(440px,78vw);height:44px;margin:.45rem 0 .25rem;}
+  .flight-path::before{content:"";position:absolute;left:5%;right:5%;top:50%;border-top:2px dashed rgba(142,27,52,.24);}
+  .flight-plane{position:absolute;top:50%;left:5%;z-index:1;font-size:1.35rem;filter:drop-shadow(0 3px 3px rgba(142,27,52,.15));transform:translate(-50%,-50%);animation:plane-flight 5s ease-in-out infinite alternate;}
+  @keyframes plane-flight{to{left:95%;transform:translate(-50%,-50%) rotate(-8deg)}}
+  .flight-stop{position:absolute;top:50%;width:9px;height:9px;border:2px solid var(--cream);border-radius:50%;background:var(--gold);box-shadow:0 0 0 1px rgba(142,27,52,.15);transform:translate(-50%,-50%);}
+  .flight-stop.start{left:5%;}.flight-stop.finish{left:95%;background:var(--crimson);}
+  .countdown{display:flex;justify-content:center;gap:clamp(.45rem,3vw,1.2rem);margin-top:.4rem;}
+  .countdown-unit{min-width:clamp(58px,15vw,82px);padding:.62rem .45rem .52rem;border:1px solid rgba(142,27,52,.11);border-radius:16px;background:linear-gradient(160deg,rgba(255,255,255,.88),rgba(255,248,243,.82));box-shadow:0 9px 22px rgba(142,27,52,.09),inset 0 1px #fff;}
+  .countdown-value{display:block;color:var(--crimson);font-size:clamp(1.55rem,6vw,2.15rem);line-height:1.05;text-shadow:0 2px #fff;}
+  .countdown-unit small{display:block;margin-top:.35rem;color:var(--rose);font-size:.58rem;letter-spacing:.14em;}
+  .countdown-value.tick{animation:countdown-tick .35s ease;}
+  @keyframes countdown-tick{50%{transform:translateY(-3px);color:var(--gold)}}
+  .countdown-caption{margin-top:.65rem;color:var(--rose);font-size:.74rem;}
+  .travel-prompt{margin-top:1rem;color:var(--ink);font-family:'Playfair Display',serif;font-size:1rem;}
+  .travel-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:.65rem;}
+  .travel-choice{padding:.58rem .85rem;border:1px solid rgba(142,27,52,.18);border-radius:999px;background:rgba(255,248,243,.8);color:var(--crimson);font-size:.75rem;transition:transform .2s,background .2s,box-shadow .2s;}
+  .travel-choice:hover,.travel-choice:focus-visible{transform:translateY(-2px);box-shadow:0 5px 14px rgba(142,27,52,.12);}
+  .travel-choice[aria-pressed="true"]{background:var(--crimson);color:var(--cream);box-shadow:0 6px 16px rgba(142,27,52,.2);}
+  #travel-note{min-height:1.4em;margin-top:.65rem;color:var(--rose);font-size:.78rem;line-height:1.5;}
+  .timezone-note{margin-top:.35rem;color:rgba(58,22,32,.6);font-size:.65rem;}
+  @media(max-width:600px){#lockscreen{padding:5vh 6vw}.countdown-unit{border-radius:13px}.departure-tag{font-size:.61rem}}
+  @media(prefers-reduced-motion:reduce){.flight-plane{animation:none;left:50%}.countdown-value.tick{animation:none}.travel-choice{transition:none}}
 </style>
 </head>
 <body>
 <div id="ripplebg"></div><div id="floaters"></div>
 <canvas id="confetti-canvas"></canvas><div id="flashlayer"></div>
 
-<div id="lockscreen" class="card active" style="background:var(--blush);z-index:90;">
-  <div class="eyebrow">something is waiting for you</div>
-  <h2 class="display">Come back on <span style="color:var(--crimson)">10 October</span>, Anthea.</h2>
-  <div style="display:flex;gap:1.2rem;margin-top:1.6rem;">
-    <div><div class="serif" id="cd-d" style="font-size:2rem;color:var(--crimson)">--</div><div style="font-size:.65rem;color:var(--rose)">DAYS</div></div>
-    <div><div class="serif" id="cd-h" style="font-size:2rem;color:var(--crimson)">--</div><div style="font-size:.65rem;color:var(--rose)">HRS</div></div>
-    <div><div class="serif" id="cd-m" style="font-size:2rem;color:var(--crimson)">--</div><div style="font-size:.65rem;color:var(--rose)">MIN</div></div>
-    <div><div class="serif" id="cd-s" style="font-size:2rem;color:var(--crimson)">--</div><div style="font-size:.65rem;color:var(--rose)">SEC</div></div>
+<div id="lockscreen" class="card active" style="z-index:90;">
+  <div class="eyebrow">your birthday adventure is boarding soon</div>
+  <h2 class="display">Next stop: <span style="color:var(--crimson)">your birthday</span>, Anthea.</h2>
+  <div class="departure-tag"><span>✦</span> birthday express <span>✦</span> gate 10 · 10 October</div>
+  <div class="flight-path" aria-hidden="true"><span class="flight-stop start"></span><span class="flight-stop finish"></span><span class="flight-plane">✈️</span></div>
+  <div class="countdown" role="timer" aria-label="Time until the birthday surprise unlocks">
+    <div class="countdown-unit"><strong class="countdown-value serif" id="cd-d">--</strong><small>DAYS</small></div>
+    <div class="countdown-unit"><strong class="countdown-value serif" id="cd-h">--</strong><small>HOURS</small></div>
+    <div class="countdown-unit"><strong class="countdown-value serif" id="cd-m">--</strong><small>MINUTES</small></div>
+    <div class="countdown-unit"><strong class="countdown-value serif" id="cd-s">--</strong><small>SECONDS</small></div>
   </div>
-  <p class="lead">This one's timed on purpose. Whatever's waiting behind this, it's worth the wait.</p>
+  <div class="countdown-caption">until the birthday surprise takes off ✨</div>
+  <p class="lead">This one's timed on purpose. Your little birthday journey begins when the clock reaches 10 October.</p>
+  <div class="travel-prompt">While we wait, what kind of trip sounds fun?</div>
+  <div class="travel-choices" role="group" aria-label="Choose a birthday trip mood">
+    <button class="travel-choice" type="button" aria-pressed="false" data-message="Scenic train rides, pretty views, and absolutely no rush. 🚆">🚆 Scenic train</button>
+    <button class="travel-choice" type="button" aria-pressed="false" data-message="Sunshine, salty air, and a whole day with nowhere else to be. 🌊">🌊 Beach day</button>
+    <button class="travel-choice" type="button" aria-pressed="false" data-message="Twinkly city lights, late-night snacks, and getting wonderfully lost. 🌃">🌃 City lights</button>
+  </div>
+  <p id="travel-note" role="status" aria-live="polite">Pick a travel mood to add a little daydream to your waiting time.</p>
+  <div class="timezone-note">Countdown uses your device's local time.</div>
 </div>
 
 <div id="deck">
@@ -485,9 +525,19 @@ function heartFly(x,y,e){const s=document.createElement("div");s.className="hear
 /* ============ countdown lock ============ */
 const UNLOCK_AT=new Date(2026,9,10,0,0,0).getTime(),lock=document.getElementById("lockscreen");let unlocked=false;
 function unlock(){if(unlocked)return;unlocked=true;lock.style.transition="opacity 1s";lock.style.opacity="0";setTimeout(()=>lock.style.display="none",1050);burst(innerWidth/2,innerHeight*.35,110);showCard(0);}
+document.querySelectorAll(".travel-choice").forEach(button=>button.addEventListener("click",()=>{
+  document.querySelectorAll(".travel-choice").forEach(choice=>choice.setAttribute("aria-pressed",String(choice===button)));
+  document.getElementById("travel-note").textContent=button.dataset.message;
+  if(typeof playPop==="function")playPop();
+}));
+function updateCountdown(id,value){
+  const el=document.getElementById(id),next=String(value).padStart(2,"0");
+  if(el.textContent===next)return;
+  el.textContent=next;el.classList.remove("tick");void el.offsetWidth;el.classList.add("tick");
+}
 function tick(){const d=UNLOCK_AT-Date.now();if(d<=0){unlock();return;}const s=Math.floor(d/1000);
-  document.getElementById("cd-d").textContent=Math.floor(s/86400);document.getElementById("cd-h").textContent=String(Math.floor(s%86400/3600)).padStart(2,"0");
-  document.getElementById("cd-m").textContent=String(Math.floor(s%3600/60)).padStart(2,"0");document.getElementById("cd-s").textContent=String(s%60).padStart(2,"0");}
+  updateCountdown("cd-d",Math.floor(s/86400));updateCountdown("cd-h",Math.floor(s%86400/3600));
+  updateCountdown("cd-m",Math.floor(s%3600/60));updateCountdown("cd-s",s%60);}
 tick();setInterval(tick,1000);if(location.hash.includes("preview"))unlock();
 
 /* ============ passcode ============ */
